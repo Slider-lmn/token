@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vinted Token — Setup AutoBuy</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --border: #222;
+    --accent: #09bf6a;
+    --accent2: #00a8ff;
+    --text: #f0f0f0;
+    --muted: #666;
+    --danger: #ff4757;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(9,191,106,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(9,191,106,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 480px;
+    position: relative;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(9,191,106,0.1);
+    border: 1px solid rgba(9,191,106,0.3);
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 6px 14px;
+    border-radius: 100px;
+    margin-bottom: 1.5rem;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 0.75rem;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Steps */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .step-num {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    background: rgba(9,191,106,0.1);
+    border: 1px solid rgba(9,191,106,0.3);
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .step-text {
+    font-size: 0.9rem;
+    color: #ccc;
+    line-height: 1.5;
+    padding-top: 4px;
+  }
+
+  .step-text code {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+  }
+
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1px;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Token zone */
+  .token-zone {
+    display: none;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .token-zone.visible {
+    display: flex;
+  }
+
+  .token-label {
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .token-box {
+    background: rgba(9,191,106,0.05);
+    border: 1px solid rgba(9,191,106,0.2);
+    border-radius: 10px;
+    padding: 1rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    word-break: break-all;
+    line-height: 1.6;
+    max-height: 120px;
+    overflow-y: auto;
+    cursor: text;
+    user-select: all;
+  }
+
+  .token-box::-webkit-scrollbar {
+    width: 4px;
+  }
+  .token-box::-webkit-scrollbar-track { background: transparent; }
+  .token-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* Buttons */
+  .btn {
+    width: 100%;
+    padding: 0.9rem 1.5rem;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .btn-primary:hover {
+    background: #0fd678;
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover {
+    border-color: #444;
+    background: rgba(255,255,255,0.03);
+  }
+
+  .btn-copy {
+    background: rgba(9,191,106,0.1);
+    border: 1px solid rgba(9,191,106,0.3);
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+  }
+
+  .btn-copy:hover {
+    background: rgba(9,191,106,0.2);
+  }
+
+  .btn-copy.copied {
+    background: rgba(9,191,106,0.2);
+    border-color: var(--accent);
+  }
+
+  /* Error / success states */
+  .alert {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    display: none;
+  }
+
+  .alert.visible { display: block; }
+
+  .alert-error {
+    background: rgba(255,71,87,0.1);
+    border: 1px solid rgba(255,71,87,0.3);
+    color: #ff6b7a;
+  }
+
+  .alert-success {
+    background: rgba(9,191,106,0.1);
+    border: 1px solid rgba(9,191,106,0.3);
+    color: var(--accent);
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    margin-top: 1.5rem;
+  }
+
+  /* Mobile */
+  .mobile-warning {
+    display: none;
+    background: rgba(255,71,87,0.08);
+    border: 1px solid rgba(255,71,87,0.2);
+    border-radius: 10px;
+    padding: 1rem;
+    font-size: 0.85rem;
+    color: #ff6b7a;
+    text-align: center;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 600px) {
+    .mobile-warning { display: block; }
+    .desktop-only { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <div class="badge">AUTOBUY SETUP</div>
+    <h1>Obtenir ton<br><span>token Vinted</span></h1>
+    <p class="subtitle">Suis les étapes ci-dessous pour connecter<br>ton compte Vinted à l'AUTO-BUY.</p>
+  </div>
+
+  <div class="mobile-warning">
+    ⚠️ Cette page nécessite un ordinateur.<br>
+    Les outils développeur ne sont pas disponibles sur mobile.
+  </div>
+
+  <div class="card desktop-only">
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Ouvre <strong>vinted.fr</strong> dans un nouvel onglet et connecte-toi à ton compte.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Reviens sur cette page et appuie sur <strong>F12</strong> pour ouvrir les outils développeur.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Clique sur l'onglet <strong>Application</strong>, puis <strong>Cookies</strong> → <code>https://www.vinted.fr</code></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">Cherche <code>access_token_web</code> dans la liste et clique dessus.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-text">Clique sur le bouton ci-dessous — le token sera extrait automatiquement !</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="extraireToken()" id="btn-extraire">
+      ⚡ Extraire mon token automatiquement
+    </button>
+
+    <div class="divider">OU</div>
+
+    <a href="https://www.vinted.fr" target="_blank" class="btn btn-secondary">
+      🔗 Ouvrir Vinted
+    </a>
+
+    <div id="alert-error" class="alert alert-error" style="margin-top:1rem"></div>
+
+    <div id="token-zone" class="token-zone" style="margin-top:1.5rem">
+      <div>
+        <div class="token-label">TON TOKEN ↓</div>
+        <div class="token-box" id="token-display"></div>
+      </div>
+      <div id="alert-success" class="alert alert-success">
+        ✅ Token extrait ! Copie-le ci-dessous puis colle-le dans Discord.
+      </div>
+      <button class="btn btn-copy" id="btn-copy" onclick="copierToken()">
+        📋 Copier le token
+      </button>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    vintedhm • Vinted Sniper Bot
+  </div>
+
+</div>
+
+<script>
+  let tokenValue = "";
+
+  function extraireToken() {
+    const btn = document.getElementById("btn-extraire");
+    const alertError = document.getElementById("alert-error");
+    const tokenZone = document.getElementById("token-zone");
+    const tokenDisplay = document.getElementById("token-display");
+    const alertSuccess = document.getElementById("alert-success");
+
+    alertError.classList.remove("visible");
+    btn.textContent = "⏳ Extraction en cours...";
+    btn.disabled = true;
+
+    // Essayer de lire le cookie access_token_web depuis vinted.fr
+    // Cette méthode utilise l'API cookies du navigateur
+    try {
+      // Tenter via document.cookie (si same-origin)
+      const cookies = document.cookie.split(';');
+      let token = null;
+
+      for (let c of cookies) {
+        const [name, ...rest] = c.trim().split('=');
+        if (name.trim() === 'access_token_web') {
+          token = rest.join('=');
+          break;
+        }
+      }
+
+      if (token) {
+        afficherToken(token);
+        return;
+      }
+
+      // Si pas trouvé via cookie direct, demander à l'utilisateur de l'ouvrir dans F12
+      alertError.innerHTML = `
+        ⚠️ Token non trouvé automatiquement.<br><br>
+        <strong>Méthode manuelle :</strong><br>
+        1. Appuie sur <strong>F12</strong><br>
+        2. Onglet <strong>Application</strong> → <strong>Cookies</strong> → <strong>vinted.fr</strong><br>
+        3. Cherche <code>access_token_web</code><br>
+        4. Double-clique sur la valeur, copie-la<br>
+        5. Colle-la directement dans Discord avec <strong>/loginvinted</strong>
+      `;
+      alertError.classList.add("visible");
+
+    } catch(e) {
+      alertError.innerHTML = `❌ Erreur : ${e.message}`;
+      alertError.classList.add("visible");
+    }
+
+    btn.textContent = "⚡ Extraire mon token automatiquement";
+    btn.disabled = false;
+  }
+
+  function afficherToken(token) {
+    tokenValue = token;
+    const tokenZone = document.getElementById("token-zone");
+    const tokenDisplay = document.getElementById("token-display");
+    const alertSuccess = document.getElementById("alert-success");
+    const btn = document.getElementById("btn-extraire");
+
+    tokenDisplay.textContent = token;
+    tokenZone.classList.add("visible");
+    alertSuccess.classList.add("visible");
+
+    btn.textContent = "✅ Token extrait !";
+    btn.style.background = "rgba(9,191,106,0.2)";
+    btn.style.color = "var(--accent)";
+    btn.style.border = "1px solid rgba(9,191,106,0.4)";
+    btn.disabled = false;
+  }
+
+  function copierToken() {
+    if (!tokenValue) {
+      // Copier ce qui est dans la box
+      const box = document.getElementById("token-display");
+      tokenValue = box.textContent.trim();
+    }
+
+    if (!tokenValue) return;
+
+    navigator.clipboard.writeText(tokenValue).then(() => {
+      const btn = document.getElementById("btn-copy");
+      btn.textContent = "✅ Copié !";
+      btn.classList.add("copied");
+      setTimeout(() => {
+        btn.textContent = "📋 Copier le token";
+        btn.classList.remove("copied");
+      }, 2000);
+    }).catch(() => {
+      // Fallback
+      const el = document.createElement('textarea');
+      el.value = tokenValue;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      const btn = document.getElementById("btn-copy");
+      btn.textContent = "✅ Copié !";
+      setTimeout(() => btn.textContent = "📋 Copier le token", 2000);
+    });
+  }
+
+  // Permettre de coller manuellement un token dans la box
+  document.addEventListener('DOMContentLoaded', () => {
+    const box = document.getElementById("token-display");
+    if (box) {
+      box.addEventListener('input', () => {
+        tokenValue = box.textContent.trim();
+      });
+    }
+  });
+</script>
+
+</body>
+</html>
